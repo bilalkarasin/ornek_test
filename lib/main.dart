@@ -40,8 +40,8 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     PersonService.createPerson(Person(ad: "Bilal", soyad: "Karaşin", boy: 170, kilo: 67, yas: 23, cinsiyet: "Erkek"));
-    PersonService.createPerson(Person(ad: "Ali", soyad: "Veli", boy: 180, kilo: 77, yas: 24, cinsiyet: "Erkek"));
-    PersonService.createPerson(Person(ad: "Şerife", soyad: "Topçuoğlu", boy: 175, kilo: 66, yas: 21, cinsiyet: "Kadın"));
+    //PersonService.createPerson(Person(ad: "Ali", soyad: "Veli", boy: 180, kilo: 77, yas: 24, cinsiyet: "Erkek"));
+    //PersonService.createPerson(Person(ad: "Şerife", soyad: "Topçuoğlu", boy: 175, kilo: 66, yas: 21, cinsiyet: "Kadın"));
   }
 
   void _showUpdateWeightDialog(BuildContext context) {
@@ -121,7 +121,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final List<Widget> _pages = [
       _buildAnasayfa(),
-      KiloTakibiPage(),
+      KiloTakibiPage(initialWeight: _currentWeight),
       FoodRecipesPage(), // Burada değişiklik yok
       ProgressPage(),
     ];
