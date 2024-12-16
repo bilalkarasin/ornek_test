@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:ornek_test/person.dart';
 import 'package:ornek_test/personService.dart';
-
+import 'package:ornek_test/vucutIstatistikleri.dart';
+import 'package:ornek_test/yemekTarifi.dart';
 import 'DatabaseHelper.dart';
+import 'ayarlar.dart';
+import 'kiloTakibi.dart';
+import 'ilerlemeGrafigi.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,23 +33,99 @@ class _HomePageState extends State<HomePage> {
   int _currentIndex = 0; // Alt menüde seçili olan sekmeyi takip etmek için
   double _currentWaterIntake = 0; // Tüketilen su miktarı
   double _currentExerciseValue = 0; // Egzersiz değeri
+  double _currentWeight = 67; // Varsayılan başlangıç kilosu
+  double _targetWeight = 65; // Varsayılan hedef kilo
 
   @override
   void initState() {
     super.initState();
-    PersonService.createPerson(Person(ad: "Bilal", soyad: "Karaşin", boy: 170, kilo: 67, yas: 23, cinsiyet: "erkek"));
-    PersonService.createPerson(Person(ad: "Ali", soyad: "Veli", boy: 180, kilo: 77, yas: 24, cinsiyet: "erkek"));
-    PersonService.createPerson(Person(ad: "Şerife", soyad: "Topçuoğlu", boy: 175, kilo: 66, yas: 21, cinsiyet: "kadın"));
+    PersonService.createPerson(Person(ad: "Bilal", soyad: "Karaşin", boy: 170, kilo: 67, yas: 23, cinsiyet: "Erkek"));
+    PersonService.createPerson(Person(ad: "Ali", soyad: "Veli", boy: 180, kilo: 77, yas: 24, cinsiyet: "Erkek"));
+    PersonService.createPerson(Person(ad: "Şerife", soyad: "Topçuoğlu", boy: 175, kilo: 66, yas: 21, cinsiyet: "Kadın"));
+  }
+
+  void _showUpdateWeightDialog(BuildContext context) {
+    double newWeight = _currentWeight; // Varsayılan değer mevcut kilo
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Kilo Güncelle"),
+          content: TextField(
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(labelText: "Yeni Kilo (kg)"),
+            onChanged: (value) {
+              newWeight = double.tryParse(value) ?? _currentWeight;
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _currentWeight = newWeight; // Yeni kiloyu güncelle
+                });
+                PersonService.updateWeight("Bilal", newWeight); // Backend güncellemesi
+                Navigator.pop(context);
+              },
+              child: Text("Güncelle"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text("İptal"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showSetTargetWeightDialog(BuildContext context) {
+    double newTargetWeight = _targetWeight; // Varsayılan hedef kilo
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Hedef Kilo Belirle"),
+          content: TextField(
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(labelText: "Hedef Kilo (kg)"),
+            onChanged: (value) {
+              newTargetWeight = double.tryParse(value) ?? _targetWeight;
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _targetWeight = newTargetWeight; // Yeni hedef kiloyu güncelle
+                });
+                Navigator.pop(context);
+              },
+              child: Text("Belirle"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text("İptal"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final List<Widget> _pages = [
-      _buildAnasayfa(), // Anasayfa içeriği
-      Center(child: Text("Kilo Takibi", style: TextStyle(fontSize: 24))),
-      FoodRecipesPage(), // Yemek Tarifleri Sayfası
-      Center(child: Text("İlerleme Grafiği", style: TextStyle(fontSize: 24))),
+      _buildAnasayfa(),
+      KiloTakibiPage(),
+      FoodRecipesPage(), // Burada değişiklik yok
+      ProgressPage(),
     ];
+
 
     return Scaffold(
       appBar: AppBar(
@@ -55,9 +135,18 @@ class _HomePageState extends State<HomePage> {
             _showOptions(context); // Seçenekler için Bottom Sheet açılır
           },
         ),
-        title: Text(
-          "Bilal",
-          style: TextStyle(fontSize: 20),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Bilal Karaşin",
+              style: TextStyle(fontSize: 20),
+            ),
+            Text(
+              "Boy = 170 cm, Kilo = $_currentWeight, Yaş = 23, Cinsiyet = Erkek",
+              style: TextStyle(fontSize: 14),
+            ),
+          ],
         ),
         backgroundColor: Colors.blueAccent,
         centerTitle: false, // Başlık sola hizalı
@@ -93,21 +182,74 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+
   // Anasayfa İçeriği
   Widget _buildAnasayfa() {
+    double exerciseProgress = _currentExerciseValue / 1000; // Örneğin 1000 kcal hedefi
+    double progressPercentage = (exerciseProgress * 100).clamp(0, 100); // Yüzde değeri
+
+    // VKI hesaplama
+    double heightInMeters = 1.70; // Boy 170 cm
+    double bmi = _currentWeight / (heightInMeters * heightInMeters); // VKİ formülü
+
+    // VKİ değerlendirmesi
+    String bmiEvaluation;
+    if (bmi < 18.5) {
+      bmiEvaluation = "Zayıf";
+    } else if (bmi >= 18.5 && bmi < 24.9) {
+      bmiEvaluation = "Normal";
+    } else {
+      bmiEvaluation = "Aşırı Kilolu";
+    }
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              CircularIndicator(title: "Alınan", unit: "KCAL", value: _currentExerciseValue / 2000),
-              CircularIndicator(title: "Yakılan", unit: "KCAL", value: _currentExerciseValue / 2000),
-            ],
+          // Yakılan Kalori kısmı (halkalı gösterim ve iç metin)
+          Center(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Daireyi oluşturuyoruz
+                SizedBox(
+                  width: 100,
+                  height: 100,
+                  child: CircularProgressIndicator(
+                    value: exerciseProgress, // Yüzde hesaplaması
+                    strokeWidth: 6, // Çubuğun kalınlığı
+                    backgroundColor: Colors.grey[300],
+                    valueColor: AlwaysStoppedAnimation(Colors.blueAccent),
+                  ),
+                ),
+                // Eğer yüzde %100 ise onay simgesi göster
+                if (progressPercentage == 100)
+                  Icon(
+                    Icons.check,
+                    color: Colors.green,
+                    size: 40, // Onay simgesinin boyutu
+                  )
+                else
+                // Halkanın içine yüzdelik değer yazıyoruz
+                  Text(
+                    "${progressPercentage.toStringAsFixed(0)}%", // Yüzdeyi yazıyoruz
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+              ],
+            ),
           ),
-          SizedBox(height: 20),
+          // Yakılan Kalori metnini dairenin altına ekliyoruz
+          SizedBox(height: 10),
+          Center(
+            child: Text(
+              "Yakılan Kalori: $_currentExerciseValue kcal",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ),
+          SizedBox(height: 30),
+
+          // Tüketilen Su kısmı
           Text(
             "Tüketilen Su",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -119,6 +261,13 @@ class _HomePageState extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("${_currentWaterIntake.toStringAsFixed(0)}/2738 ml"),
+              // Onay simgesini ekliyoruz
+              if (_currentWaterIntake >= 2738)
+                Icon(
+                  Icons.check,
+                  color: Colors.green,
+                  size: 30, // Onay simgesinin boyutu
+                ),
               ElevatedButton(
                 onPressed: () => _showAddWaterDialog(context),
                 child: Text("Ekle"),
@@ -126,6 +275,8 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           SizedBox(height: 30),
+
+          // Egzersizler kısmı
           Text(
             "Egzersizler",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -135,14 +286,125 @@ class _HomePageState extends State<HomePage> {
             onPressed: () => _showAddExerciseDialog(context),
             child: Text("Egzersiz Ekle"),
           ),
+
+          // Çizgi ekleme
           SizedBox(height: 20),
+          Divider(thickness: 3, color: Colors.blueAccent),
+          SizedBox(height: 20),
+
+          // Kilo güncelleme ve hedef kilo ayarlama butonlarını sayfayı kaplayacak şekilde yerleştiriyoruz
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => _showUpdateWeightDialog(context),
+                  child: Text("Kilo Güncelle"),
+                ),
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => _showSetGoalWeightDialog(context),
+                  child: Text("Hedef Kilo Ayarla"),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 20),
+
+          // Hedef Kilo metni, burası dinamik olacak
+          Text(
+            "Hedef Kilo: $_goalWeight kg", // Dinamik hedef kilo
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 10),
+
+          // Vücut Kitle İndeksi metni
+          Text(
+            "Vücut Kitle İndeksi: ${bmi.toStringAsFixed(1)}", // VKİ
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.blueAccent, // Renk değişimi
+            ),
+          ),
+          SizedBox(height: 10),
+
+          // VKİ değerlendirmesi
+          Container(
+            padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            decoration: BoxDecoration(
+              color: bmi < 18.5
+                  ? Colors.orange[200]
+                  : (bmi < 24.9 ? Colors.green[200] : Colors.red[200]),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: bmi < 18.5
+                    ? Colors.orange
+                    : (bmi < 24.9 ? Colors.green : Colors.red),
+                width: 2,
+              ),
+            ),
+            child: Text(
+              "Değerlendirme: $bmiEvaluation", // VKİ değerlendirmesi
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black, // Metin rengi
+              ),
+            ),
+          ),
+          SizedBox(height: 30),
           Spacer(),
         ],
       ),
     );
   }
 
-  // Su eklemek için diyalog
+// Hedef Kilo için bir değişken ekledik
+  double _goalWeight = 65; // Başlangıçta varsayılan hedef kilo
+
+// Hedef Kilo Ayarlama için diyalog
+  void _showSetGoalWeightDialog(BuildContext context) {
+    double goalWeight = _goalWeight; // Başlangıçta mevcut hedef kilo
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Hedef Kilo Ayarla"),
+          content: TextField(
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(labelText: "Hedef Kilo (kg)"),
+            onChanged: (value) {
+              goalWeight = double.tryParse(value) ?? goalWeight;
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _goalWeight = goalWeight; // Kullanıcının girdiği değeri kaydediyoruz
+                });
+                Navigator.pop(context);
+              },
+              child: Text("Kaydet"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text("İptal"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
+// Su eklemek için diyalog
   void _showAddWaterDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -181,42 +443,61 @@ class _HomePageState extends State<HomePage> {
 
   // Egzersiz eklemek için diyalog
   void _showAddExerciseDialog(BuildContext context) {
+    String selectedExercise = 'Basketbol';
+    double selectedExerciseCalories = 300;
+
+    Map<String, double> exerciseCaloriesMap = {
+      'Basketbol': 300,
+      'Yüzme': 400,
+      'Koşmak': 350,
+      'Futbol Oynamak': 450,
+      'Ağırlık Kaldırmak': 500,
+    };
+
     showDialog(
       context: context,
       builder: (context) {
-        String selectedExercise = 'Basketbol';
-        double exerciseCalories = 0;
-
-        Map<String, double> exerciseCaloriesMap = {
-          'Basketbol': 300,
-          'Yüzme': 400,
-          'Koşmak': 350,
-          'Futbol Oynamak': 450,
-          'Ağırlık Kaldırmak': 500,
-        };
-
         return AlertDialog(
           title: Text("Egzersiz Ekle"),
-          content: DropdownButton<String>(
-            value: selectedExercise,
-            onChanged: (String? newValue) {
-              setState(() {
-                selectedExercise = newValue!;
-                exerciseCalories = exerciseCaloriesMap[selectedExercise]!;
-              });
-            },
-            items: exerciseCaloriesMap.keys.map((String exercise) {
-              return DropdownMenuItem<String>(
-                value: exercise,
-                child: Text(exercise),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButton<String>(
+                    value: selectedExercise,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedExercise = newValue!;
+                        selectedExerciseCalories = exerciseCaloriesMap[selectedExercise]!;
+                      });
+                    },
+                    items: exerciseCaloriesMap.keys.map((String exercise) {
+                      return DropdownMenuItem<String>(
+                        value: exercise,
+                        child: Text(exercise),
+                      );
+                    }).toList(),
+                  ),
+                  SizedBox(height: 16.0),
+                  Text(
+                    "Seçilen Egzersiz: $selectedExercise",
+                    style: TextStyle(fontSize: 16.0),
+                  ),
+                  SizedBox(height: 8.0),
+                  Text(
+                    "Kalori Değeri: $selectedExerciseCalories",
+                    style: TextStyle(fontSize: 16.0),
+                  ),
+                ],
               );
-            }).toList(),
+            },
           ),
           actions: [
             TextButton(
               onPressed: () {
                 setState(() {
-                  _currentExerciseValue += exerciseCalories;
+                  _currentExerciseValue += selectedExerciseCalories;
                 });
                 Navigator.pop(context);
               },
@@ -233,8 +514,9 @@ class _HomePageState extends State<HomePage> {
       },
     );
   }
+}
 
-  // Seçenekler Menüsü
+// Seçenekler Menüsü
   void _showOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -249,7 +531,7 @@ class _HomePageState extends State<HomePage> {
                 Navigator.pop(context);
                 Navigator.push(context, MaterialPageRoute(builder: (context) => BodyStatsPage()));
               },
-            ),
+            ),/*
             ListTile(
               leading: Icon(Icons.list),
               title: Text("Kaydedilen Yemek Listeleri"),
@@ -265,7 +547,7 @@ class _HomePageState extends State<HomePage> {
                 Navigator.pop(context);
                 Navigator.push(context, MaterialPageRoute(builder: (context) => NotificationsPage()));
               },
-            ),
+            ),*/
             ListTile(
               leading: Icon(Icons.settings),
               title: Text("Ayarlar"),
@@ -274,244 +556,12 @@ class _HomePageState extends State<HomePage> {
                 Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsPage()));
               },
             ),
-            /*ListTile(
-              leading: Icon(Icons.restaurant_menu),
-              title: Text("Yemek Tarifleri"),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (context) => FoodRecipesPage()));
-              },
-            ),*/
           ],
         );
       },
     );
   }
-}
 
-// Yemek Tarifleri Sayfası
-// Yemek Tarifleri Sayfası
-class FoodRecipesPage extends StatefulWidget {
-  @override
-  _FoodRecipesPageState createState() => _FoodRecipesPageState();
-}
-
-class _FoodRecipesPageState extends State<FoodRecipesPage> {
-  List<String> recipes = [
-    'Köfte',
-    'Makarna',
-    'Salata',
-    'Çorba',
-    'Pilav',
-    'Izgara Balık',
-  ];
-  List<bool> isFavorited = List.generate(6, (_) => false);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.deepOrange,
-        title: Text('Yemek Tarifleri', style: TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12.0),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.2),
-                spreadRadius: 2,
-                blurRadius: 8,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
-          child: ListView.builder(
-            itemCount: recipes.length,
-            itemBuilder: (context, index) {
-              return Container(
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                  ),
-                ),
-                child: ListTile(
-                  contentPadding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 16.0),
-                  title: Text(
-                    recipes[index],
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  trailing: IconButton(
-                    icon: Icon(
-                      isFavorited[index] ? Icons.favorite : Icons.favorite_border,
-                      color: isFavorited[index] ? Colors.red : Colors.grey,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        isFavorited[index] = !isFavorited[index];
-                      });
-                    },
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => FoodRecipeDetailPage(
-                          recipeName: recipes[index],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// Yemek Tarifi Detay Sayfası
-class FoodRecipeDetailPage extends StatelessWidget {
-  final String recipeName;
-
-  FoodRecipeDetailPage({required this.recipeName});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.deepOrange,
-        title: Text(recipeName),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Malzemeler',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.teal, // Maviyle uyumlu renk
-                ),
-              ),
-              SizedBox(height: 8.0),
-              _buildIngredientsList(),
-              SizedBox(height: 16.0),
-              Text(
-                'Yapılışı',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.teal, // Maviyle uyumlu renk
-                ),
-              ),
-              SizedBox(height: 8.0),
-              _buildRecipeSteps(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Yemek malzemelerini listeleyen widget
-  Widget _buildIngredientsList() {
-    return Column(
-      children: [
-        _ingredientTile('Malzeme 1'),
-        _ingredientTile('Malzeme 2'),
-        _ingredientTile('Malzeme 3'),
-      ],
-    );
-  }
-
-  // Her malzeme için ListTile oluşturan widget
-  Widget _ingredientTile(String ingredient) {
-    return ListTile(
-      leading: Icon(Icons.check_circle, color: Colors.green),
-      title: Text(ingredient),
-    );
-  }
-
-  // Yemek yapılışını listeleyen widget
-  Widget _buildRecipeSteps() {
-    return Column(
-      children: [
-        _recipeStepTile('Adım 1', 'Açıklama 1'),
-        _recipeStepTile('Adım 2', 'Açıklama 2'),
-        _recipeStepTile('Adım 3', 'Açıklama 3'),
-      ],
-    );
-  }
-
-  // Her adım için ListTile oluşturan widget
-  Widget _recipeStepTile(String step, String description) {
-    return ListTile(
-      leading: Text(step, style: TextStyle(fontWeight: FontWeight.bold)),
-      title: Text(description),
-    );
-  }
-}
-
-
-
-// Vücut İstatistikleri Sayfası
-class BodyStatsPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Vücut İstatistikleri")),
-      body: Center(child: Text("Vücut İstatistikleri Ekranı")),
-    );
-  }
-}
-
-// Kaydedilen Yemek Listeleri
-class FoodListsPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Yemek Listeleri")),
-      body: Center(child: Text("Yemek Listeleri Ekranı")),
-    );
-  }
-}
-
-// Bildirimler Sayfası
-class NotificationsPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Bildirimler")),
-      body: Center(child: Text("Bildirimler Ekranı")),
-    );
-  }
-}
-
-// Ayarlar Sayfası
-class SettingsPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Ayarlar")),
-      body: Center(child: Text("Ayarlar Ekranı")),
-    );
-  }
-}
 
 // Daire İndikatör Widget
 class CircularIndicator extends StatelessWidget {
