@@ -20,7 +20,7 @@ class ProgressPage extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Center(
           child: Text(
-            'İlerleme Grafikleri Burada Görüntülenecek.',
+            'İlerleme Grafikleri Burada Görüntülenecekkkkkk.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 18,
