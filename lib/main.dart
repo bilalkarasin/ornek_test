@@ -57,7 +57,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    PersonService.createPerson(Person(ad: "Bilal", soyad: "Karaşin", boy: 170, kilo: 67, yas: 23, cinsiyet: "Erkek"));
+    //PersonService.createPerson(Person(ad: "Bilal", soyad: "Karaşin", boy: 170, kilo: 67, yas: 23, cinsiyet: "Erkek"));
   }
 
   // Kilo güncelleme diyalogu
@@ -212,10 +212,10 @@ class _HomePageState extends State<HomePage> {
     String bmiEvaluation;
     if (bmi < 18.5) {
       bmiEvaluation = "Zayıf";
-    } else if (bmi >= 18.5 && bmi < 24.9) {
+    } else if (bmi >= 18.5 && bmi < 25) {
       bmiEvaluation = "Normal";
     } else {
-      bmiEvaluation = "Aşırı Kilolu";
+      bmiEvaluation = "Fazla Kilolu";
     }
 
     return Padding(
@@ -333,12 +333,12 @@ class _HomePageState extends State<HomePage> {
             decoration: BoxDecoration(
               color: bmi < 18.5
                   ? Colors.orange[200]
-                  : (bmi < 24.9 ? Colors.green[200] : Colors.red[200]),
+                  : (bmi < 25 ? Colors.green[200] : Colors.red[200]),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: bmi < 18.5
                     ? Colors.orange
-                    : (bmi < 24.9 ? Colors.green : Colors.red),
+                    : (bmi < 25 ? Colors.green : Colors.red),
                 width: 2,
               ),
             ),
@@ -482,7 +482,16 @@ class _HomePageState extends State<HomePage> {
               title: Text("Vücut İstatistikleri"),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (context) => BodyStatsPage()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => BodyStatsPage(
+                      currentWeight: _currentWeight,
+                      targetWeight: _targetWeight,
+                      bmi: _currentWeight / (1.70 * 1.70), // VKİ hesaplama
+                    ),
+                  ),
+                );
               },
             ),
             ListTile(
