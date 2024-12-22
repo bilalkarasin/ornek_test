@@ -14,17 +14,35 @@ void main() async {
   runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _isDarkTheme = false; // Temanın başlangıç durumu
+
+  void _toggleTheme() {
+    setState(() {
+      _isDarkTheme = !_isDarkTheme; // Temayı değiştir
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: HomePage(),
+      theme: _isDarkTheme ? ThemeData.dark() : ThemeData.light(), // Temayı burada ayarlıyoruz
+      home: HomePage(toggleTheme: _toggleTheme), // Ana sayfaya fonksiyonu geçiriyoruz
     );
   }
 }
 
 class HomePage extends StatefulWidget {
+  final Function toggleTheme;
+
+  HomePage({required this.toggleTheme});
+
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -40,10 +58,9 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     PersonService.createPerson(Person(ad: "Bilal", soyad: "Karaşin", boy: 170, kilo: 67, yas: 23, cinsiyet: "Erkek"));
-    //PersonService.createPerson(Person(ad: "Ali", soyad: "Veli", boy: 180, kilo: 77, yas: 24, cinsiyet: "Erkek"));
-    //PersonService.createPerson(Person(ad: "Şerife", soyad: "Topçuoğlu", boy: 175, kilo: 66, yas: 21, cinsiyet: "Kadın"));
   }
 
+  // Kilo güncelleme diyalogu
   void _showUpdateWeightDialog(BuildContext context) {
     double newWeight = _currentWeight; // Varsayılan değer mevcut kilo
     showDialog(
@@ -81,6 +98,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // Hedef kilo belirleme diyalogu
   void _showSetTargetWeightDialog(BuildContext context) {
     double newTargetWeight = _targetWeight; // Varsayılan hedef kilo
     showDialog(
@@ -122,17 +140,16 @@ class _HomePageState extends State<HomePage> {
     final List<Widget> _pages = [
       _buildAnasayfa(),
       KiloTakibiPage(initialWeight: _currentWeight),
-      FoodRecipesPage(), // Burada değişiklik yok
+      FoodRecipesPage(),
       ProgressPage(),
     ];
-
 
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.menu), // Menü simgesi
+          icon: Icon(Icons.menu),
           onPressed: () {
-            _showOptions(context); // Seçenekler için Bottom Sheet açılır
+            _showOptions(context);
           },
         ),
         title: Column(
@@ -149,17 +166,17 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
         backgroundColor: Colors.blueAccent,
-        centerTitle: false, // Başlık sola hizalı
+        centerTitle: false,
       ),
-      body: _pages[_currentIndex], // Alt menüye göre değişen ekran
+      body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex, // Seçili olan sekmeyi gösterir
+        currentIndex: _currentIndex,
         onTap: (index) {
           setState(() {
-            _currentIndex = index; // Tıklanan sekmeye geçiş yap
+            _currentIndex = index;
           });
         },
-        type: BottomNavigationBarType.fixed, // 4+ sekme için sabit tip
+        type: BottomNavigationBarType.fixed,
         items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -181,7 +198,6 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-
 
   // Anasayfa İçeriği
   Widget _buildAnasayfa() {
@@ -207,39 +223,34 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Yakılan Kalori kısmı (halkalı gösterim ve iç metin)
           Center(
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Daireyi oluşturuyoruz
                 SizedBox(
                   width: 100,
                   height: 100,
                   child: CircularProgressIndicator(
-                    value: exerciseProgress, // Yüzde hesaplaması
-                    strokeWidth: 6, // Çubuğun kalınlığı
+                    value: exerciseProgress,
+                    strokeWidth: 6,
                     backgroundColor: Colors.grey[300],
                     valueColor: AlwaysStoppedAnimation(Colors.blueAccent),
                   ),
                 ),
-                // Eğer yüzde %100 ise onay simgesi göster
                 if (progressPercentage == 100)
                   Icon(
                     Icons.check,
                     color: Colors.green,
-                    size: 40, // Onay simgesinin boyutu
+                    size: 40,
                   )
                 else
-                // Halkanın içine yüzdelik değer yazıyoruz
                   Text(
-                    "${progressPercentage.toStringAsFixed(0)}%", // Yüzdeyi yazıyoruz
+                    "${progressPercentage.toStringAsFixed(0)}%",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
               ],
             ),
           ),
-          // Yakılan Kalori metnini dairenin altına ekliyoruz
           SizedBox(height: 10),
           Center(
             child: Text(
@@ -248,8 +259,6 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           SizedBox(height: 30),
-
-          // Tüketilen Su kısmı
           Text(
             "Tüketilen Su",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -261,12 +270,11 @@ class _HomePageState extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("${_currentWaterIntake.toStringAsFixed(0)}/2738 ml"),
-              // Onay simgesini ekliyoruz
               if (_currentWaterIntake >= 2738)
                 Icon(
                   Icons.check,
                   color: Colors.green,
-                  size: 30, // Onay simgesinin boyutu
+                  size: 30,
                 ),
               ElevatedButton(
                 onPressed: () => _showAddWaterDialog(context),
@@ -275,8 +283,6 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           SizedBox(height: 30),
-
-          // Egzersizler kısmı
           Text(
             "Egzersizler",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -286,13 +292,9 @@ class _HomePageState extends State<HomePage> {
             onPressed: () => _showAddExerciseDialog(context),
             child: Text("Egzersiz Ekle"),
           ),
-
-          // Çizgi ekleme
           SizedBox(height: 20),
           Divider(thickness: 3, color: Colors.blueAccent),
           SizedBox(height: 20),
-
-          // Kilo güncelleme ve hedef kilo ayarlama butonlarını sayfayı kaplayacak şekilde yerleştiriyoruz
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -305,33 +307,27 @@ class _HomePageState extends State<HomePage> {
               SizedBox(width: 10),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () => _showSetGoalWeightDialog(context),
+                  onPressed: () => _showSetTargetWeightDialog(context),
                   child: Text("Hedef Kilo Ayarla"),
                 ),
               ),
             ],
           ),
           SizedBox(height: 20),
-
-          // Hedef Kilo metni, burası dinamik olacak
           Text(
-            "Hedef Kilo: $_goalWeight kg", // Dinamik hedef kilo
+            "Hedef Kilo: $_targetWeight kg",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 10),
-
-          // Vücut Kitle İndeksi metni
           Text(
-            "Vücut Kitle İndeksi: ${bmi.toStringAsFixed(1)}", // VKİ
+            "Vücut Kitle İndeksi: ${bmi.toStringAsFixed(1)}",
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.blueAccent, // Renk değişimi
+              color: Colors.blueAccent,
             ),
           ),
           SizedBox(height: 10),
-
-          // VKİ değerlendirmesi
           Container(
             padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
             decoration: BoxDecoration(
@@ -347,11 +343,11 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             child: Text(
-              "Değerlendirme: $bmiEvaluation", // VKİ değerlendirmesi
+              "Değerlendirme: $bmiEvaluation",
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.black, // Metin rengi
+                color: Colors.black,
               ),
             ),
           ),
@@ -362,49 +358,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-// Hedef Kilo için bir değişken ekledik
-  double _goalWeight = 65; // Başlangıçta varsayılan hedef kilo
-
-// Hedef Kilo Ayarlama için diyalog
-  void _showSetGoalWeightDialog(BuildContext context) {
-    double goalWeight = _goalWeight; // Başlangıçta mevcut hedef kilo
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text("Hedef Kilo Ayarla"),
-          content: TextField(
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(labelText: "Hedef Kilo (kg)"),
-            onChanged: (value) {
-              goalWeight = double.tryParse(value) ?? goalWeight;
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _goalWeight = goalWeight; // Kullanıcının girdiği değeri kaydediyoruz
-                });
-                Navigator.pop(context);
-              },
-              child: Text("Kaydet"),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text("İptal"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-
-// Su eklemek için diyalog
+  // Su eklemek için diyalog
   void _showAddWaterDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -514,9 +468,8 @@ class _HomePageState extends State<HomePage> {
       },
     );
   }
-}
 
-// Seçenekler Menüsü
+  // Seçenekler Menüsü
   void _showOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -531,29 +484,13 @@ class _HomePageState extends State<HomePage> {
                 Navigator.pop(context);
                 Navigator.push(context, MaterialPageRoute(builder: (context) => BodyStatsPage()));
               },
-            ),/*
-            ListTile(
-              leading: Icon(Icons.list),
-              title: Text("Kaydedilen Yemek Listeleri"),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (context) => FoodListsPage()));
-              },
             ),
-            ListTile(
-              leading: Icon(Icons.notifications),
-              title: Text("Bildirimler"),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (context) => NotificationsPage()));
-              },
-            ),*/
             ListTile(
               leading: Icon(Icons.settings),
               title: Text("Ayarlar"),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsPage()));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsPage(toggleTheme: widget.toggleTheme)));
               },
             ),
           ],
@@ -561,30 +498,33 @@ class _HomePageState extends State<HomePage> {
       },
     );
   }
+}
 
+// Ayarlar Sayfası Sınıfı
+class SettingsPage extends StatelessWidget {
+  final Function toggleTheme;
 
-// Daire İndikatör Widget
-class CircularIndicator extends StatelessWidget {
-  final String title;
-  final String unit;
-  final double value;
-
-  CircularIndicator({required this.title, required this.unit, required this.value});
+  SettingsPage({required this.toggleTheme});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            CircularProgressIndicator(value: value, strokeWidth: 8),
-            Text("${(value * 100).toInt()}%", style: TextStyle(fontSize: 16)),
-          ],
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Ayarlar'),
+        backgroundColor: Colors.blueAccent,
+      ),
+      body: Center(
+        child: SwitchListTile(
+          title: Text('Karanlık Tema'),
+          value: Theme.of(context).brightness == Brightness.dark,
+          onChanged: (value) {
+            toggleTheme(); // Tema değiştirme fonksiyonunu çağır
+          },
+          secondary: Icon(
+            Theme.of(context).brightness == Brightness.dark ? Icons.dark_mode : Icons.light_mode,
+          ),
         ),
-        SizedBox(height: 10),
-        Text("$title\n$unit", textAlign: TextAlign.center),
-      ],
+      ),
     );
   }
 }

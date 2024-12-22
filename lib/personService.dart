@@ -2,6 +2,8 @@ import 'package:ornek_test/DatabaseHelper.dart';
 import 'package:ornek_test/person.dart';
 
 class PersonService {
+  static var persons;
+
   static Future<bool> createPerson(Person model) async {
     bool isSaved = false;
     // Person nesnesini Map'e dönüştürme
