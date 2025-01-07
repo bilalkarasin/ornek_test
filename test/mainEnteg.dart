@@ -1,3 +1,8 @@
+//Yazan:Bilal Karaşin,Şerife Topçuoğlu
+//Test eden:Bilal Karaşin,Şerife Topçuoğlu
+//Hata ayıklayan:Bilal Karaşin,Şerife Topçuoğlu
+
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ornek_test/main.dart';
@@ -9,7 +14,7 @@ void main() {
     testWidgets('should display correct user information and allow updating weight and target weight',
             (WidgetTester tester) async {
           // Arrange
-          await tester.pumpWidget(MaterialApp(home: HomePage()));
+         // await tester.pumpWidget(MaterialApp(home: HomePage()));
 
           // Assert
           expect(find.text('Bilal Karaşin'), findsOneWidget);

@@ -1,3 +1,8 @@
+//Yazan:Bilal Karaşin,Şerife Topçuoğlu
+//Test eden:Bilal Karaşin,Şerife Topçuoğlu
+//Hata ayıklayan:Bilal Karaşin,Şerife Topçuoğlu
+
+
 class Person {
   String ad;
   String soyad;

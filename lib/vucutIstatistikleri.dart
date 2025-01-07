@@ -1,3 +1,8 @@
+//Yazan:Bilal Karaşin,Şerife Topçuoğlu
+//Test eden:Bilal Karaşin,Şerife Topçuoğlu
+//Hata ayıklayan:Bilal Karaşin,Şerife Topçuoğlu
+
+
 import 'package:flutter/material.dart';
 
 class BodyStatsPage extends StatelessWidget {

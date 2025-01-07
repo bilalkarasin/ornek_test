@@ -1,3 +1,8 @@
+//Yazan:Bilal Karaşin,Şerife Topçuoğlu
+//Test eden:Bilal Karaşin,Şerife Topçuoğlu
+//Hata ayıklayan:Bilal Karaşin,Şerife Topçuoğlu
+
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ornek_test/person.dart';

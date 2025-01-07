@@ -1,7 +1,14 @@
+//Yazan:Bilal Karaşin,Şerife Topçuoğlu
+//Test eden:Bilal Karaşin,Şerife Topçuoğlu
+//Hata ayıklayan:Bilal Karaşin,Şerife Topçuoğlu
+
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ornek_test/ayarlar.dart';
 //import 'package:ornek_test/settings_page.dart';
+
+
 
 void main() {
   testWidgets('SettingsPage should display correctly', (WidgetTester tester) async {
